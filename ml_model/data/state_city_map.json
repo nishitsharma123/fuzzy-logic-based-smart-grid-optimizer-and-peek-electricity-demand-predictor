@@ -1,0 +1,19 @@
+{
+  "Delhi": [
+    "New Delhi"
+  ],
+  "Karnataka": [
+    "Bengaluru"
+  ],
+  "Maharashtra": [
+    "Mumbai",
+    "Pune"
+  ],
+  "Tamil Nadu": [
+    "Chennai"
+  ],
+  "Uttar Pradesh": [
+    "Lucknow",
+    "Noida"
+  ]
+}

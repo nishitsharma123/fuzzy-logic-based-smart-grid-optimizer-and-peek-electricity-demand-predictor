@@ -1,182 +1,373 @@
-// export default PowerPrediction;
-import React, { useState } from "react";
 import axios from "axios";
-import { Info } from "lucide-react";
+import { Info, CheckCircle } from "lucide-react";
+import confetti from "canvas-confetti";
+import stateCityMap from "../../../ml_model/data/state_city_map.json";
+import { useState } from "react";
+
+/* =========================
+   CONFIG / CONSTANTS
+========================= */
+
+const API_URL = "http://localhost:3000/predict";
+
+const STATES = Object.keys(stateCityMap);
+
+const URBAN_RURAL = ["Urban", "Rural"];
+
+/* =========================
+   MAIN COMPONENT
+========================= */
+
 const PowerPrediction = () => {
+  const [step, setStep] = useState(0);
+
   const [formData, setFormData] = useState({
     State: "",
-    Temperature: 0,
-    Electricity_Price: 0,
-    UrbanRural_Classification: "",
-    date: "",
-    Time: "",
-    City:""
-    // Historical_Energy_Consumption: "",
-    // Humidity: "",
-    // Wind_Speed: "",
-    // Solar_Radiation: "",
-    // Grid_Load_Capacity: "",
-    // Economic_Activity_Index: "",
-    // Renewable_Energy_Contribution: "",
-    // Population_Density: "",
-    // City:"",
-    // Industrial_Load_Factor: "",
-    // Commercial_Residential_Split: "",
-    // Household_Appliance_Penetration: "",
-    // Work_from_Home_Trends: "",
-    // Transmission_Distribution_Losses: "",
-    // Power_Outage_Frequency: "",
-    // Battery_Storage_Availability: "",
-    // Backup_Generator_Usage: "",
-    // Grid_Stability_Index: "",
-    // Festival_Holiday_Energy_Consumption_Multiplier: "",
-    // School_College_Operational_Days: "",
-    // Event_Based_Load_Increase: "",
-    // AC_Heater_Usage_Probability: "",
-    // Dew_Point: "",
-    // Cloud_Cover: "",
-    // Rainfall: "",
-    // AQI: "",
-    // EV_Charging_Load: "",
-    // Government_Subsidy_Impact_on_Electricity_Consumption: "",
-    // Smart_Meter_Penetration: "",
-    // Carbon_Emission_Reduction_Goals: "",
+    City: "",
+    UrbanRural: "Urban",
+
+    Hour: 18,
+    DayOfWeek: 2,
+    Month: 6,
+    IsWeekend: 0,
+
+    Temperature: 30,
+    Electricity_Price: 6,
+
+    load_t_1: 900,
+    load_t_24: 880,
+    load_t_168: 860,
+    rolling_mean_24: 890,
+    rolling_max_24: 950,
+    rolling_std_24: 45,
+    rolling_mean_168: 870,
   });
-// console.log(formData);
-  const [predictedDemand, setPredictedDemand] = useState(null);
+
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const togglePopup = () => setIsOpen(!isOpen);
 
+  /* =========================
+     HELPERS
+  ========================= */
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const textFields = ["State", "UrbanRural_Classification", "date", "Time","City"];
-    setFormData({
-      ...formData,
-      [name]: textFields.includes(name) ? value : value === "" ? "" : Number(value),
+  const updateField = (key, value) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const celebrate = () => {
+    confetti({
+      particleCount: 180,
+      spread: 100,
+      origin: { y: 0.6 },
     });
   };
 
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const emptyFields = Object.entries(formData).filter(([_, val]) => val === "" || val === null);
-    if (emptyFields.length > 0) {
-      setError(`Please fill all required fields: ${emptyFields.map(([key]) => key).join(", ")}`);
-      return;
-    }
-
+  const submitPrediction = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post("http://localhost:3000/predict", formData);
-      setPredictedDemand(response.data.predicted_demand);
-    } catch (err) {
-      setError(err.response?.data?.message || "Error predicting demand. Check inputs and API.");
+      const res = await axios.post(API_URL, formData);
+      setResult(res.data);
+      celebrate();
+    } catch (e) {
+      setError(e.response?.data?.error || "Prediction failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="max-w-screen mx-auto p-6 bg-white rounded-2xl h-screen shadow-xl w-screen">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-700 mt-20">Power Peek Demand Prediction</h1>
-      {/* Info Button */}
-      <button
-        onClick={togglePopup}
-        className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition"
-      >
-        <Info size={20} />
-      </button>
+  /* =========================
+     SLIDES
+  ========================= */
 
-      {/* Popup Modal */}
-      {isOpen && (
-        <div className="absolute top-10 left-16 w-[800px] mt-40 p-4 bg-gray-300 shadow-lg rounded-lg border z-10">
-           <h3 className="text-lg font-semibold mb-2">Energy Consumption Data Instructions</h3>
-    <p className="text-base text-gray-600">
-      Please provide the following data in the specified format and units:
-      <ul className="list-disc ml-4">
-        <li><strong>State/Region:</strong> (Text) - Enter the name of the state or region (e.g., California, Maharashtra).</li>
-        <li><strong>Date:</strong> (Date - YYYY-MM-DD) - Use the format Year-Month-Day (e.g., 2025-02-27).</li>
-        <li><strong>Time:</strong> (Time - HH:MM, 24-hour format) - Use Hour:Minute in 24-hour format (e.g., 14:30).</li>
-        <li><strong>Temperature:</strong> (Number - °C) - Ambient temperature in degrees Celsius.</li>
-        <li><strong>Electricity Price:</strong> (Number - INR/kWh) - Price of electricity per kilowatt-hour in INR.</li>
-        <li><strong>Urban vs Rural Classification:</strong> (Text - Urban/Rural) - Specify either Urban or Rural.</li>
-        {/* <li><strong>Historical Energy Consumption:</strong> (Number - kWh) - Total energy consumption in kilowatt-hours.</li> */}
-        {/* <li><strong>Humidity:</strong> (Number - %) - Humidity percentage (0–100%).</li> */}
-        {/* <li><strong>Wind Speed:</strong> (Number - km/h) - Wind speed in kilometers per hour.</li> */}
-        {/* <li><strong>Solar Radiation:</strong> (Number - W/m²) - Solar radiation in watts per square meter.</li> */}
-        {/* <li><strong>Grid Load Capacity:</strong> (Number - %) - Percentage of grid capacity utilized.</li> */}
-        {/* <li><strong>Economic Activity Index:</strong> (Number - 0–100) - Index representing economic activity level.</li> */}
-        {/* <li><strong>Renewable Energy Contribution:</strong> (Number - %) - Contribution percentage of renewable sources.</li> */}
-        {/* <li><strong>Population Density:</strong> (Number - people/km²) - Population per square kilometer.</li> */}
-        {/* <li><strong>Industrial Load Factor:</strong> (Number - MW) - Industrial power load in megawatts.</li> */}
-        {/* <li><strong>Commercial & Residential Split:</strong> (Number - %) - Percentage distribution between commercial and residential usage.</li> */}
-        {/* <li><strong>Household Appliance Penetration:</strong> (Number - %) - Percentage of households with appliances.</li> */}
-        {/* <li><strong>Work from Home Trends:</strong> (Number - %) - Percentage of people working from home.</li> */}
-        {/* <li><strong>Transmission & Distribution Losses:</strong> (Number - %) - Energy losses in transmission and distribution.</li> */}
-        {/* <li><strong>Power Outage Frequency:</strong> (Number - Hours/Month) - Average monthly outage duration.</li> */}
-        {/* <li><strong>Battery Storage Availability:</strong> (Number - MW) - Total available battery storage in megawatts.</li> */}
-        {/* <li><strong>Backup Generator Usage:</strong> (Number - %) - Percentage of backup generator use.</li> */}
-        {/* <li><strong>Grid Stability Index:</strong> (Number - 0–100) - Index rating grid stability.</li> */}
-        {/* <li><strong>Festival & Holiday Energy Consumption Multiplier:</strong> (Number) - Multiplier during festivals/holidays.</li> */}
-        {/* <li><strong>School & College Operational Days:</strong> (Number - %) - Percentage of operational days per month.</li> */}
-        {/* <li><strong>Event-Based Load Increase:</strong> (Number - MW) - Load increase due to specific events.</li> */}
-        {/* <li><strong>AC & Heater Usage Probability:</strong> (Number - %) - Probability of AC/heater usage.</li> */}
-        {/* <li><strong>Dew Point:</strong> (Number - °C) - Dew point temperature in degrees Celsius.</li> */}
-        {/* <li><strong>Cloud Cover:</strong> (Number - %) - Percentage of cloud cover.</li> */}
-        {/* <li><strong>Rainfall:</strong> (Number - mm/day) - Rainfall in millimeters per day.</li> */}
-        {/* <li><strong>Air Quality Index (AQI):</strong> (Number) - AQI value representing air quality.</li> */}
-        {/* <li><strong>EV Charging Load:</strong> (Number - MW) - Load from EV charging in megawatts.</li> */}
-        {/* <li><strong>Government Subsidy Impact on Electricity Consumption:</strong> (Number - INR Crore) - Impact in INR Crore.</li> */}
-        {/* <li><strong>Smart Meter Penetration:</strong> (Number - %) - Percentage of smart meter installations.</li> */}
-        {/* <li><strong>Carbon Emission Reduction Goals:</strong> (Number - % target met) - Percentage of target achieved.</li> */}
-      </ul>
-    </p>
-          <button
-            onClick={togglePopup}
-            className="mt-4 w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 transition"
-          >
-            Close
-          </button>
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Object.keys(formData).map((key) => (
-          <div key={key} className="flex flex-col mt-5">
-            <label className="mb-2 text-grey-700 font-semibold" htmlFor={key}>
-              {key.replace(/_/g, " ")}
-            </label>
-            <input
-              type={key === "date" ? "date" : key === "Time" ? "Time" : typeof formData[key] === "number" ? "number" : "text"}
-              id={key}
-              name={key}
-              value={formData[key]}
-              onChange={handleChange}
-              className="p-3 border border-black rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
+  const slides = [
+    {
+      title: "Location Context",
+      content: (
+        <>
+          <SelectInput
+            label="State"
+            value={formData.State}
+            options={STATES}
+            onChange={(value) => {
+              setFormData((prev) => ({
+                ...prev,
+                State: value,
+                City: "", // reset city when state changes
+              }));
+            }}
+          />
+
+          <SelectInput
+            label="City"
+            value={formData.City}
+            options={formData.State ? stateCityMap[formData.State] : []}
+            disabled={!formData.State}
+            onChange={(value) => updateField("City", value)}
+          />
+
+          <SelectInput
+            label="Area Type"
+            value={formData.UrbanRural}
+            options={URBAN_RURAL}
+            onChange={(v) => updateField("UrbanRural", v)}
+          />
+        </>
+      ),
+    },
+    {
+      title: "Time Context",
+      content: (
+        <>
+          <NumberInput
+            label="Hour (0–23)"
+            value={formData.Hour}
+            onChange={(v) => updateField("Hour", v)}
+          />
+          <NumberInput
+            label="Day Of Week (0=Sun)"
+            value={formData.DayOfWeek}
+            onChange={(v) => updateField("DayOfWeek", v)}
+          />
+          <NumberInput
+            label="Month (1–12)"
+            value={formData.Month}
+            onChange={(v) => updateField("Month", v)}
+          />
+          <SelectInput
+            label="Weekend?"
+            value={formData.IsWeekend}
+            options={[
+              { label: "No", value: 0 },
+              { label: "Yes", value: 1 },
+            ]}
+            onChange={(v) => updateField("IsWeekend", Number(v))}
+          />
+        </>
+      ),
+    },
+    {
+      title: "Weather & Pricing",
+      content: (
+        <>
+          <NumberInput
+            label="Temperature (°C)"
+            value={formData.Temperature}
+            onChange={(v) => updateField("Temperature", v)}
+          />
+          <NumberInput
+            label="Electricity Price (₹/kWh)"
+            value={formData.Electricity_Price}
+            onChange={(v) => updateField("Electricity_Price", v)}
+          />
+        </>
+      ),
+    },
+    {
+      title: "Historical Load Features",
+      content: (
+        <>
+          <NumberInput
+            label="Load t-1"
+            value={formData.load_t_1}
+            onChange={(v) => updateField("load_t_1", v)}
+          />
+          <NumberInput
+            label="Load t-24"
+            value={formData.load_t_24}
+            onChange={(v) => updateField("load_t_24", v)}
+          />
+          <NumberInput
+            label="Load t-168"
+            value={formData.load_t_168}
+            onChange={(v) => updateField("load_t_168", v)}
+          />
+          <NumberInput
+            label="Rolling Mean (24h)"
+            value={formData.rolling_mean_24}
+            onChange={(v) => updateField("rolling_mean_24", v)}
+          />
+          <NumberInput
+            label="Rolling Max (24h)"
+            value={formData.rolling_max_24}
+            onChange={(v) => updateField("rolling_max_24", v)}
+          />
+          <NumberInput
+            label="Rolling Std (24h)"
+            value={formData.rolling_std_24}
+            onChange={(v) => updateField("rolling_std_24", v)}
+          />
+        </>
+      ),
+    },
+    {
+      title: "Review Inputs",
+      content: <ReviewSummary data={formData} />,
+    },
+  ];
+
+  /* =========================
+     RENDER
+  ========================= */
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="w-[950px] h-[550px] bg-white rounded-3xl shadow-xl p-10 flex flex-col justify-between mt-28">
+        {/* HEADER */}
+        <h1 className="text-3xl font-bold text-center text-gray-800">
+          Electricity Demand Predictor
+        </h1>
+
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto mt-6 space-y-6">
+          <h2 className="text-xl font-semibold text-gray-700">
+            {slides[step].title}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {slides[step].content}
           </div>
-        ))}
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-56 m-auto md:col-span-2 lg:col-span-3 p-3 text-white font-semibold rounded-2xl bg-blue-500 hover:bg-blue-600 transition-opacity ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          {loading ? "Predicting..." : "Predict"}
-        </button>
-      </form>
-      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-      {predictedDemand !== null && (
-        <div className="mt-6 text-center bg-green-100 text-green-800 p-4 rounded-2xl">
-          <h2 className="text-xl font-semibold">Predicted Power Demand:</h2>
-          <p className="text-3xl font-bold">{predictedDemand} MW</p>
         </div>
+
+        {/* NAVIGATION */}
+        <div className="flex justify-between items-center mt-6">
+          <button
+            disabled={step === 0}
+            onClick={() => setStep((s) => s - 1)}
+            className="px-5 py-2 rounded-full bg-gray-200 disabled:opacity-40"
+          >
+            ◀ Back
+          </button>
+
+          {step < slides.length - 1 ? (
+            <button
+              onClick={() => setStep((s) => s + 1)}
+              className="px-6 py-2 rounded-full bg-blue-600 text-white"
+            >
+              Next ▶
+            </button>
+          ) : (
+            <button
+              onClick={submitPrediction}
+              disabled={loading}
+              className="px-6 py-2 rounded-full bg-green-600 text-white flex items-center gap-2"
+            >
+              <CheckCircle size={18} />
+              {loading ? "Predicting..." : "Predict"}
+            </button>
+          )}
+        </div>
+
+        {error && <p className="text-red-600 text-center mt-2">{error}</p>}
+      </div>
+
+      {/* RESULT MODAL */}
+      {result && (
+        <ResultModal result={result} onClose={() => setResult(null)} />
       )}
     </div>
   );
 };
+
+/* =========================
+   INPUT COMPONENTS
+========================= */
+
+const NumberInput = ({ label, value, onChange }) => (
+  <div>
+    <label className="text-sm font-semibold">{label}</label>
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => {
+        const v = e.target.value;
+        onChange(v === "" ? "" : Number(v));
+      }}
+      className="mt-1 w-full p-2 border rounded-xl focus:ring-2 focus:ring-blue-400"
+    />
+  </div>
+);
+
+const SelectInput = ({ label, value, options, onChange, disabled }) => (
+  <div>
+    <label className="text-sm font-semibold">{label}</label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`mt-1 w-full p-2 border rounded-xl ${
+        disabled ? "bg-gray-100 cursor-not-allowed" : ""
+      }`}
+    >
+      <option value="">Select</option>
+      {options.map((opt) =>
+        typeof opt === "string" ? (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ) : (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        )
+      )}
+    </select>
+  </div>
+);
+
+/* =========================
+   REVIEW SUMMARY
+========================= */
+
+const ReviewSummary = ({ data }) => (
+  <div className="col-span-2 space-y-4">
+    {Object.entries(data).map(([k, v]) => (
+      <div key={k} className="flex justify-between bg-gray-50 p-3 rounded-xl">
+        <span className="text-gray-500">{k.replace(/_/g, " ")}</span>
+        <span className="font-semibold">{v}</span>
+      </div>
+    ))}
+  </div>
+);
+
+/* =========================
+   RESULT MODAL
+========================= */
+
+const ResultModal = ({ result, onClose }) => (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white w-[500px] rounded-2xl p-6 shadow-xl animate-scaleIn">
+      <h2 className="text-2xl font-bold text-center mb-4">Prediction Result</h2>
+
+      <div className="text-center">
+        <p className="text-4xl font-extrabold text-blue-600">
+          {result.predicted_hourly_demand} MW
+        </p>
+        <p className="mt-2 text-lg">
+          Risk Level:
+          <span className="ml-2 font-bold text-red-600">
+            {result.peak_risk_level}
+          </span>
+        </p>
+      </div>
+
+      <div className="mt-4 text-sm bg-gray-50 p-4 rounded-xl">
+        <b>Risk Explanation:</b>
+        <p className="mt-1">
+          Risk is determined using historical demand percentiles. Values above
+          the 90th percentile are HIGH risk, and above the 95th percentile are
+          CRITICAL.
+        </p>
+      </div>
+
+      <button
+        onClick={onClose}
+        className="mt-6 w-full bg-blue-600 text-white py-2 rounded-xl"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+);
 
 export default PowerPrediction;
