@@ -40,6 +40,11 @@ export default function Header() {
               EDA
             </li>{" "}
           </Link>
+          <Link to="/modelPerformance">
+            <li className=" w-32 text-center rounded-3xl p-2 hover:bg-blue-400 bg-blue-500 text-white hover:text-black transition duration-300 ease-in-out ">
+              M_Performance
+            </li>{" "}
+          </Link>
         </ul>
       </div>
     </header>

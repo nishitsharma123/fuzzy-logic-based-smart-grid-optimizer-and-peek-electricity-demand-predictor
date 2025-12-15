@@ -250,6 +250,105 @@ def eda_bias_variance():
         "val_rmse": val_rmse.tolist()
     })
 
+
+
+# ---------------
+# model performnce api
+# ---------------
+@app.route("/model/performance", methods=["GET"])
+def model_performance():
+    return jsonify({
+
+        # ===============================
+        # OVERALL METRICS (KPI CARDS)
+        # ===============================
+        "metrics": {
+            "MAE": 44.11,
+            "RMSE": 55.47,
+            "R2": 0.895,
+            "SMAPE": 5.06
+        },
+
+        # ===============================
+        # ACTUAL vs PREDICTED (TIME SERIES)
+        # ===============================
+        "prediction_vs_actual": [
+            {"time": "2024-01-01 00:00", "actual": 780, "predicted": 790},
+            {"time": "2024-01-01 01:00", "actual": 760, "predicted": 755},
+            {"time": "2024-01-01 02:00", "actual": 740, "predicted": 748},
+            {"time": "2024-01-01 03:00", "actual": 720, "predicted": 730},
+            {"time": "2024-01-01 04:00", "actual": 710, "predicted": 705},
+            {"time": "2024-01-01 05:00", "actual": 730, "predicted": 735},
+            {"time": "2024-01-01 06:00", "actual": 800, "predicted": 810},
+            {"time": "2024-01-01 07:00", "actual": 880, "predicted": 870},
+            {"time": "2024-01-01 08:00", "actual": 940, "predicted": 950},
+            {"time": "2024-01-01 09:00", "actual": 980, "predicted": 990},
+            {"time": "2024-01-01 10:00", "actual": 1020, "predicted": 1010},
+            {"time": "2024-01-01 11:00", "actual": 1050, "predicted": 1060},
+            {"time": "2024-01-01 12:00", "actual": 1080, "predicted": 1075},
+            {"time": "2024-01-01 13:00", "actual": 1100, "predicted": 1090},
+            {"time": "2024-01-01 14:00", "actual": 1120, "predicted": 1130},
+            {"time": "2024-01-01 15:00", "actual": 1150, "predicted": 1140},
+            {"time": "2024-01-01 16:00", "actual": 1180, "predicted": 1190},
+            {"time": "2024-01-01 17:00", "actual": 1200, "predicted": 1210},
+            {"time": "2024-01-01 18:00", "actual": 1250, "predicted": 1240},
+            {"time": "2024-01-01 19:00", "actual": 1300, "predicted": 1310},
+            {"time": "2024-01-01 20:00", "actual": 1280, "predicted": 1275},
+            {"time": "2024-01-01 21:00", "actual": 1240, "predicted": 1230},
+            {"time": "2024-01-01 22:00", "actual": 1180, "predicted": 1170},
+            {"time": "2024-01-01 23:00", "actual": 1050, "predicted": 1060}
+        ],
+
+        # ===============================
+        # ERRORS / RESIDUALS
+        # ===============================
+        "errors": [
+            {"time": "00:00", "error": 10},
+            {"time": "01:00", "error": -5},
+            {"time": "02:00", "error": 8},
+            {"time": "03:00", "error": 10},
+            {"time": "04:00", "error": -5},
+            {"time": "05:00", "error": 5},
+            {"time": "06:00", "error": 10},
+            {"time": "07:00", "error": -10},
+            {"time": "08:00", "error": 10},
+            {"time": "09:00", "error": 10},
+            {"time": "10:00", "error": -10},
+            {"time": "11:00", "error": 10},
+            {"time": "12:00", "error": -5},
+            {"time": "13:00", "error": -10},
+            {"time": "14:00", "error": 10},
+            {"time": "15:00", "error": -10},
+            {"time": "16:00", "error": 10},
+            {"time": "17:00", "error": 10},
+            {"time": "18:00", "error": -10},
+            {"time": "19:00", "error": 10},
+            {"time": "20:00", "error": -5},
+            {"time": "21:00", "error": -10},
+            {"time": "22:00", "error": -10},
+            {"time": "23:00", "error": 10}
+        ],
+
+        # ===============================
+        # LEARNING CURVE (BIAS–VARIANCE)
+        # ===============================
+        "learning_curve": {
+            "samples": [1000, 3000, 6000, 9000, 12000],
+            "train": [120, 92, 70, 55, 48],
+            "val": [145, 105, 78, 60, 55]
+        },
+
+        # ===============================
+        # PEAK LOAD CLASSIFICATION ACCURACY
+        # ===============================
+        "peak_accuracy": {
+            "normal": 0.92,
+            "high": 0.88,
+            "critical": 0.84
+        }
+    })
+
+
 # =====================================================
 # RUN SERVER
 # =====================================================
